@@ -1,0 +1,16 @@
+*~
+*.csv
+*.doc
+*.odt
+*.ods
+*.xlsx
+*.sqlite3
+*.pdf
+*.jpg
+*.list
+*.xls
+*.log
+*.tmp
+*.tuc
+*.txt
+*.png

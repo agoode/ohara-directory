@@ -1,0 +1,79 @@
+# README
+
+## Class Lists
+
+1. Get Class Lists 8-18-17.pdf
+
+2. pdftotext
+
+3. It works! Edit txt file to depaginate. Check for line breaks.
+
+4. Manually remove withdrawn students ?? (They appear withdrawn already)
+
+5. class-list-to-csv.pl Class\ Lists\ 8-18-17.txt  > classlist-20170818.csv
+
+6. Get last year's final "export-YYYYMMDD.csv".
+
+7. Edit scripts.sql (imports and merged) and run
+   sqlite3 db.sqlite3 < scripts.sql
+
+8. Look at missing-YYYYMMDD.csv. Massage new class list file (and
+   possibly old one) until missing is minimized.
+
+9. Use 2017-teacher-letters.odt to merge from teachers.csv. The trick is
+   to Print the document, then say "Yes" to mail merge. Then save as
+   individual PDF files with the FILENAME_PREFIX for the filename prefix.
+
+10. Do the same merge for 2017-student-form.odt to merge from
+    mergerview-YYYYMMDD.csv.
+
+11. Run make-forms-pdf.sh.
+
+
+## Processing class lists
+
+1. Scan all the lists in PDFs.
+
+2. for z in *.pdf; do pdfimages -all $z $(basename -s .pdf $z); done
+
+3. rm ../ocr/ocr-results.txt
+
+4. ../ocr/ocr.sh *.jpg
+
+5. Open ocr/index.html and type answers in command line.
+
+6. cd ocr
+
+7. Run ./copy-numbered.pl ocr-results.txt
+
+
+## Last chance forms
+
+1. basename -s .jpg numbered-forms/*.jpg | sort -n > returned.txt
+
+2. Maybe look through and delete bad forms from returned.txt.
+
+2. sqlite3 db.sqlite3
+
+3. .read scripts-last-chance.sql
+
+4. Mail merge student-form-last-chance.odt on last-chance-20170917.csv.
+
+5. pdfunite last-chance-forms/*.pdf shared/last-chance-20170917.pdf
+
+
+## Running a directory
+
+1. sqlite3 db-export.sqlite3 < scripts-export.sql
+
+2. cd numbered-forms; for z in *.jpg; do convert $z -scale 25% $(basename -s .jpg $z)-small.jpg& done
+
+3. context --mode=proof directory.tex
+
+## TODO
+
+- Insert guide-words
+- Insert page numbers? Or entry numbers?
+- Guide-numbers?
+- Cross reference by page or number?
+- Keep separate, hidden names field, to join against school roster
