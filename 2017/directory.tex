@@ -6,6 +6,10 @@
 \definefontfamily [office] [math]  [TeX Gyre Termes Math]
 \setupbodyfont[office, 10pt]
 
+\startmode[tiny]
+\setupbodyfont[office, 2pt]
+\stopmode
+
 \setupexternalfigures[directory={numbered-forms}]
 %\useMPlibrary[dum]
 
@@ -15,6 +19,15 @@
              height=10.15in,
              header=0.25in,
              footer=0.25in]
+
+\startmode[tiny]
+\setuplayout[backspace=0.25in,
+             width=8in,
+             topspace=0.25in,
+             height=10.50in,
+             header=0in,
+             footer=0in]
+\stopmode
 
 \setuphead[section][indentnext=yes]
 
@@ -213,7 +226,11 @@ function printparent(r, num, skip, addr)
   if p ~= "" then
     context.setupindenting({'yes', 'small'})
     context.start()
-    context.definedfont({'SansBold at 9pt'})
+    if tex.modes["tiny"] then
+      context.definedfont({'SansBold at 2pt'})
+    else
+      context.definedfont({'SansBold at 9pt'})
+    end
     context.setupinterlinespace()
     context('%!tex!', p)
     context.stop()
@@ -258,7 +275,11 @@ function printentry(names, entry, proof)
   context.startframedtext({width='broad', frame='none'})
   context.startlines()
   printnames(names, proof)
-  context.definedfont({'Sans at 9pt'})
+  if tex.modes["tiny"] then
+    context.definedfont({'Sans at 2pt'})
+  else
+    context.definedfont({'Sans at 9pt'})
+  end
   context.setupinterlinespace()
   printrecord(entry)
   context.stoplines()
@@ -267,7 +288,11 @@ end
 
 function printdirectory(proof)
   if not proof then
-    context.startcolumns({n=2})
+    if tex.modes["tiny"] then
+      context.startcolumns({n=9})
+    else
+      context.startcolumns({n=2})
+    end
   end
 
   local f = readdata(io.loaddata('responses-20170926.list'))
@@ -430,7 +455,7 @@ local sampleentry = {['Parent/Guardian 1'] = 'Parent/Guardian 1',
                      ['EMAIL 3'] = 'third@example.com',
                      ['EMAIL 4'] = 'fourth@example.com'}
 
-if (tex.modes["proof"]) then
+if tex.modes["proof"] then
   context.section('Sample format')
   context.startcolumns({n=2})
 
@@ -466,7 +491,9 @@ if (tex.modes["proof"]) then
   printstudents()
 else
   printdirectory(false)
-  printstudents()
+  if not tex.modes["tiny"] then
+    printstudents()
+  end
 end
 
 \stopluacode
