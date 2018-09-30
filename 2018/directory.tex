@@ -1,0 +1,500 @@
+\setuppapersize[letter][letter]
+
+\definefontfamily [office] [serif] [TeX Gyre Termes]
+\definefontfamily [office] [sans]  [TeX Gyre Heros]
+\definefontfamily [office] [mono]  [TeX Gyre Cursor] [features=none]
+\definefontfamily [office] [math]  [TeX Gyre Termes Math]
+\setupbodyfont[office, 10pt]
+
+\startmode[tiny]
+\setupbodyfont[office, 2pt]
+\stopmode
+
+\setupexternalfigures[directory={numbered-forms}]
+%\useMPlibrary[dum]
+
+\setuplayout[backspace=0.75in,
+             width=7in,
+             topspace=0.35in,
+             height=10.15in,
+             header=0.25in,
+             footer=0.25in]
+
+\startmode[tiny]
+\setuplayout[backspace=0.25in,
+             width=8in,
+             topspace=0.25in,
+             height=10.50in,
+             header=0in,
+             footer=0in]
+\stopmode
+
+\setuphead[section][indentnext=yes]
+
+\setuppagenumbering[location=]
+
+\startmode[proof]
+\setupheadertexts[{\color[red]{DO NOT DISTRIBUTE}}][{\color[red]{PROOFREADER USE ONLY}}][{\color[red]{DO NOT DISTRIBUTE}}][{\color[red]{PROOFREADER USE ONLY}}]
+\setupfootertexts[{\color[red]{PROOFREADER USE ONLY}}][{\color[red]{DO NOT DISTRIBUTE}}][{\color[red]{PROOFREADER USE ONLY}}][{\color[red]{DO NOT DISTRIBUTE}}]
+
+\setuppagenumbering[location=bottom]
+\definelist[debugno]
+\stopmode
+
+\definelist[students]
+
+\setupinteraction[state=start, title={2017 O'Hara Elementary Student Directory}]
+
+\startmode[proof]
+\placebookmarks[students]
+\placebookmarks[debugno]
+\setupinteractionscreen[option=bookmark]
+\stopmode
+
+%\setupwhitespace[medium]
+\setupinterlinespace[line=2.4ex]
+
+\ss
+
+\startmode[proof]
+\title{O'Hara Elementary Directory \color[red]{PROOF DOCUMENT} 2017-09-30}
+\stopmode
+
+
+\starttext
+
+\startmode[proof]
+\completecontent
+\pagebreak
+\stopmode
+
+\startluacode
+function splitline(line)
+  return string.split(line, '')
+end
+
+function readdata(f)
+  -- read sqlite 0x1F/0x1E style data (with header)
+  local s = string.split(f, '')
+  local data = {}
+  local header = splitline(s[1])
+  table.remove(s, 1)
+
+  -- read lines
+  for _,v in ipairs(s) do
+    local row = {}
+    local l = splitline(v)
+    for i,val in ipairs(l) do
+      row[header[i]] = string.strip(val)
+    end
+    -- don't insert empty last row
+    if row[header[1]] ~= "" then
+      table.insert(data, row)
+    end
+  end
+
+  return data
+end
+
+function unlisted(r)
+  if r['Returned?'] == "" then return true end
+  return r['Parent/Guardian 1'] == "" and
+         r['Parent/Guardian 2'] == "" and
+         r['Parent/Guardian 3'] == "" and
+         r['Parent/Guardian 4'] == "" and
+         r['HOME PHONE 1/2'] == "" and
+         r['HOME PHONE 3+4'] == "" and
+         r['Str # 1+2'] == "" and
+         r['Str # 3+4'] == "" and
+         r['St. 1+2'] == "" and
+         r['St. 3+4'] == "" and
+         r['ZIP 1+2'] == "" and
+         r['ZIP 3+4'] == "" and
+         r['CELL 1'] == "" and
+         r['CELL 2'] == "" and
+         r['CELL 3'] == "" and
+         r['CELL 4'] == "" and
+         r['EMAIL 1'] == "" and
+         r['EMAIL 2'] == "" and
+         r['EMAIL 3'] == "" and
+         r['EMAIL 4'] == ""
+end
+
+function issamehomes(a, b)
+  a = a or {}
+  b = b or {}
+
+  -- no data means no match
+  if unlisted(a) or unlisted(b) then return false end
+
+  return a['Parent/Guardian 1'] == b['Parent/Guardian 1'] and
+         a['Parent/Guardian 2'] == b['Parent/Guardian 2'] and
+         a['Parent/Guardian 3'] == b['Parent/Guardian 3'] and
+         a['Parent/Guardian 4'] == b['Parent/Guardian 4'] and
+         a['HOME PHONE 1/2'] == b['HOME PHONE 1/2'] and
+         a['HOME PHONE 3+4'] == b['HOME PHONE 3+4'] and
+         a['Str # 1+2'] == b['Str # 1+2'] and
+         a['Str # 3+4'] == b['Str # 3+4'] and
+         a['St. 1+2'] == b['St. 1+2'] and
+         a['St. 3+4'] == b['St. 3+4'] and
+         a['ZIP 1+2'] == b['ZIP 1+2'] and
+         a['ZIP 3+4'] == b['ZIP 3+4'] and
+         a['CELL 1'] == b['CELL 1'] and
+         a['CELL 2'] == b['CELL 2'] and
+         a['CELL 3'] == b['CELL 3'] and
+         a['CELL 4'] == b['CELL 4'] and
+         a['EMAIL 1'] == b['EMAIL 1'] and
+         a['EMAIL 2'] == b['EMAIL 2'] and
+         a['EMAIL 3'] == b['EMAIL 3'] and
+         a['EMAIL 4'] == b['EMAIL 4']
+end
+
+function extractname(r)
+  local l = {}
+  l['first'] = r['FIRST']
+  l['last'] = r['LAST']
+  l['suffix'] = r['Suffix']
+  l['teacher'] = r['TEACHER']
+  l['grade'] = r['GRADE']
+  l['no'] = r['No']
+  l['extrano'] = r['Extra form']
+  l['notes'] = r['Notes']
+  return l
+end
+
+function printnames(names, proof)
+  for i,n in ipairs(names) do
+    if not proof then
+      s = string.formatter('%!tex!, %!tex!', n['last'], n['first'])
+      if n['suffix'] ~= '' then
+        s = s .. string.formatter(', %!tex!', n['suffix'])
+      end
+      context.bookmark({'students'}, s)
+    end
+    context.bold(
+      function() s = string.formatter('%!tex!,~%!tex!', n['last'], n['first'])
+                   if n['suffix'] ~= '' then
+                   s = s .. string.formatter(',~%!tex!', n['suffix'])
+                 end
+                 tex.sprint(s)
+                 if proof then context.color({'red'}, function() context(' %d', n['no']) end) end
+                 context.hfill()
+                 context.unhyphenated(function() context('(%!tex!,~%!tex!)',n['grade'], n['teacher']) end)
+      end
+    )
+    context(true)
+  end
+end
+
+function printaddr(r, num)
+  if r['St. ' .. num] == "" then return end
+  local addr = r['Str # ' .. num] .. " " .. r['St. ' .. num] .. ", " .. r['ZIP ' .. num]
+  context.indenting()
+  context.par()
+  context('%!tex!', addr)
+  context(true)
+end
+
+function printhomephone(r, num)
+  printphone(r, num, 'H', 'HOME PHONE')
+end
+
+function printcellphone(r, num)
+  printphone(r, num, 'C', 'CELL')
+end
+
+function printemail(r, num)
+  local e = r['EMAIL ' .. num]
+  if e == "" then return end
+  local emails = string.split(e, ';')
+  for k,v in ipairs(emails) do
+    context.unhyphenated(function() context('%!tex!', string.strip(v)) end)
+    context(true)
+  end
+end
+
+function printphone(r, num, prefix, key)
+  local p = r[key .. ' ' .. num]
+  if p == "" then return end
+  context('%s: %!tex!', prefix, p)
+  context(true)
+end
+
+function printparent(r, num, skip, addr)
+  local p = r['Parent/Guardian ' .. num]
+  if skip then context.medskip() end
+  if p ~= "" then
+    context.setupindenting({'yes', 'small'})
+    context.start()
+    if tex.modes["tiny"] then
+      context.definedfont({'SansBold at 2pt'})
+    else
+      context.definedfont({'SansBold at 9pt'})
+    end
+    context.setupinterlinespace()
+    context('%!tex!', p)
+    context.stop()
+    context(true)
+  end
+  context.setupindenting({'yes', 'medium'})
+  if addr then
+    printaddr(r, addr)
+    printhomephone(r, addr)
+  end
+  printcellphone(r, num)
+  printemail(r, num)
+end
+
+function printrecord(r)
+  if r['Returned?'] == "" then return end
+  context.setupindenting({'yes', 'small'})
+  printhomephone(r, '1/2')
+  printaddr(r, '1+2')
+  printparent(r, '1', true)
+  printparent(r, '2')
+  printparent(r, '3', true, '3+4')
+  printparent(r, '4')
+end
+
+function printdebugimage(img, last, first, suffix, notes)
+  s = string.formatter('%!tex! %!tex!, %!tex!', img, last, first)
+  if suffix ~= '' then
+    s = s .. string.formatter(', %!tex!', suffix)
+  end
+  context.bookmark({'debugno'}, s)
+  context.externalfigure({img .. '-small.jpg'}, {width='5in', frame='on'})
+  if notes ~= "" then
+    context.startlines()
+    context('Notes:\r%!tex!', notes:gsub('\n', '\r'))
+    context.stoplines()
+  end
+  context(true)
+end
+
+function printentry(names, entry, proof)
+  context.startframedtext({width='broad', frame='none'})
+  context.startlines()
+  printnames(names, proof)
+  if tex.modes["tiny"] then
+    context.definedfont({'Sans at 2pt'})
+  else
+    context.definedfont({'Sans at 9pt'})
+  end
+  context.setupinterlinespace()
+  printrecord(entry)
+  context.stoplines()
+  context.stopframedtext()
+end
+
+function printdirectory(proof)
+  if not proof then
+    if tex.modes["tiny"] then
+      context.startcolumns({n=9})
+    else
+      context.startcolumns({n=2})
+    end
+  end
+
+  local f = readdata(io.loaddata('responses-20170926.list'))
+  local prev = nil
+  local cur = nil
+  local names = {}
+  local i = nil
+  local familycount = 0
+  while true do
+    i, cur = next(f, i)
+    if prev == nil then
+      -- first record
+      prev = cur
+      table.insert(names, extractname(prev))
+      i, cur = next(f, i)
+    end
+
+    if cur == nil or not issamehomes(prev, cur) then
+      -- flush prev
+      familycount = familycount + 1
+      commands.writestatus('family', string.formatter('%d', familycount))
+      if proof then
+        for k,v in ipairs(names) do
+          printdebugimage(string.format('%s', v['no']), v['last'], v['first'], v['suffix'], v['notes'])
+          printentry(names, prev, proof)
+          context.pagebreak()
+          if v['extrano'] ~= "" then
+            printdebugimage(string.format('%s', v['extrano']), v['last'], v['suffix'], v['first'], v['notes'])
+            printentry(names, prev, proof)
+            context.pagebreak()
+          end
+        end
+      else
+        printentry(names, prev, proof)
+      end
+      names = {}
+      prev = cur
+    end
+
+    if prev == nil then break end
+    table.insert(names, extractname(cur))
+  end
+
+  if not proof then
+    context.stopcolumns()
+  end
+end
+
+function gradetoword(grade)
+  if     grade == '0' then return 'KINDERGARTEN'
+  elseif grade == '1' then return 'FIRST GRADE'
+  elseif grade == '2' then return 'SECOND GRADE'
+  elseif grade == '3' then return 'THIRD GRADE'
+  elseif grade == '4' then return 'FOURTH GRADE'
+  elseif grade == '5' then return 'FIFTH GRADE'
+  end
+end
+
+function printstudents()
+  local f = readdata(io.loaddata('students-20170926.list'))
+  local grade = nil
+  local teacher = nil
+  local inlines = false
+  for i, row in ipairs(f) do
+    local g = gradetoword(row['GRADE'])
+    local t = row['TEACHER']
+    local name = row['FIRST'] .. ' ' .. row['LAST']
+    if row['Suffix'] ~= '' then
+      name = name .. ' ' .. row['Suffix']
+    end
+    commands.writestatus('student', string.formatter('%d %s %s %s', i, g, t, name))
+    if g ~= grade then
+      grade = g
+      if inlines then
+        context.stoplines()
+        context.stopcolumns()
+        context.vfill()
+        inlines = false
+      end
+      context.pagebreak()
+      context.startframedtext({frame='off', width='broad', align='middle', bodyfont='18pt', style='bold'})
+      context(g)
+      context.stopframedtext()
+    end
+    if t ~= teacher then
+      teacher = t
+      if inlines then
+        context.stoplines()
+        context.stopcolumns()
+        context.vfill()
+        inlines = false
+      end
+      context.start()
+      context.hfill()
+      context.bold()
+      context(t)
+      context.hfill()
+      context.stop()
+      context(true)
+      context.medskip()
+      context.startcolumns({n=4, balance='yes'})
+      context.startlines()
+      inlines = true
+    end
+    context.unhyphenated(name)
+    context(true)
+  end
+  if inlines then
+    context.stoplines()
+    context.stopcolumns()
+    context.vfill()
+    inlines = false
+  end
+end
+
+function emptyentry()
+  local entry = {['Parent/Guardian 1'] = '',
+                 ['Parent/Guardian 2'] = '',
+                 ['Parent/Guardian 3'] = '',
+                 ['Parent/Guardian 4'] = '',
+                 ['HOME PHONE 1/2'] = '',
+                 ['HOME PHONE 3+4'] = '',
+                 ['Str # 1+2'] = '',
+                 ['Str # 3+4'] = '',
+                 ['St. 1+2'] = '',
+                 ['St. 3+4'] = '',
+                 ['ZIP 1+2'] = '',
+                 ['ZIP 3+4'] = '',
+                 ['CELL 1'] = '',
+                 ['CELL 2'] = '',
+                 ['CELL 3'] = '',
+                 ['CELL 4'] = '',
+                 ['EMAIL 1'] = '',
+                 ['EMAIL 2'] = '',
+                 ['EMAIL 3'] = '',
+                 ['EMAIL 4'] = ''}
+  return entry
+end
+
+local samplenames = {{first='First', last='Last', suffix='Jr.', teacher='TEACHER', grade='1'},
+                     {first='Second', last='Last', suffix='', teacher='PROFESSOR', grade='5'}}
+local sampleentry = {['Parent/Guardian 1'] = 'Parent/Guardian 1',
+                     ['Parent/Guardian 2'] = 'Parent/Guardian 2',
+                     ['Parent/Guardian 3'] = 'Parent/Guardian 3',
+                     ['Parent/Guardian 4'] = 'Parent/Guardian 4',
+                     ['HOME PHONE 1/2'] = '121-212-1212',
+                     ['HOME PHONE 3+4'] = '343-434-3434',
+                     ['Str # 1+2'] = '12',
+                     ['Str # 3+4'] = '34',
+                     ['St. 1+2'] = 'First St.',
+                     ['St. 3+4'] = 'Third St.',
+                     ['ZIP 1+2'] = '11111',
+                     ['ZIP 3+4'] = '33333',
+                     ['CELL 1'] = '111-111-1111',
+                     ['CELL 2'] = '222-222-2222',
+                     ['CELL 3'] = '333-333-3333',
+                     ['CELL 4'] = '444-444-4444',
+                     ['EMAIL 1'] = 'first@example.com; first+alt@example.com',
+                     ['EMAIL 2'] = 'second@example.com',
+                     ['EMAIL 3'] = 'third@example.com',
+                     ['EMAIL 4'] = 'fourth@example.com'}
+
+if tex.modes["proof"] then
+  context.section('Sample format')
+  context.startcolumns({n=2})
+
+  printentry(samplenames, sampleentry)
+
+  local justemailentry = emptyentry()
+  justemailentry['EMAIL 1'] = 'just@example.com'
+  printentry({{first='Just', last='Email', suffix='', teacher='TEACHER', grade='K'}},
+             justemailentry)
+
+  local justemailentry2 = emptyentry()
+  justemailentry2['EMAIL 2'] = 'just2@example.com'
+  printentry({{first='Another', last='Email', suffix='', teacher='TEACHER', grade='K'}},
+             justemailentry2)
+
+  context.stopcolumns()
+  context.pagebreak()
+
+  context.section('Layout draft')
+  context('Starts on next page.')
+  context.pagebreak()
+  printdirectory(false)
+  context.pagebreak()
+
+  context.section('Proofreading')
+  context('Starts on next page.')
+  context.pagebreak()
+  printdirectory(true)
+
+  context.section('Student list by teacher')
+  context('Starts on next page.')
+  context.pagebreak()
+  printstudents()
+else
+  printdirectory(false)
+  if not tex.modes["tiny"] then
+    printstudents()
+  end
+end
+
+\stopluacode
+\stoptext
