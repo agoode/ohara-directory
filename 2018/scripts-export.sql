@@ -8,7 +8,7 @@ drop table if exists teachers;
 
 -- responses
 .mode csv
-.import Ohara_pto_9_27_2018.csv responses
+.import combined-20181005.csv responses
 
 -- export view
 create view export as
@@ -47,16 +47,16 @@ create view export as
 -- run export
 .header on
 .mode ascii
-.once export-20180927.list
+.once export-20181005.list
 select * from export order by rowid;
 .mode csv
-.once export-20180927.csv
+.once export-20181005.csv
 select * from export order by grade, teacher, last, first;
 
 -- run student export
 .header on
 .mode ascii
-.once students-20180927.list
+.once students-20181005.list
 select distinct
   replace(grade, 'K', '0') as grade, TEACHER, first, last
   from export order by 1,2,3,4;
