@@ -57,7 +57,7 @@
 \ss
 
 \startmode[proof]
-\title{O'Hara Elementary Directory \color[red]{PROOF DOCUMENT} 2018-10-12}
+\title{O'Hara Elementary Directory \color[red]{PROOF DOCUMENT} 2018-10-18}
 \stopmode
 
 
@@ -237,7 +237,7 @@ function printdirectory(proof)
     context.startcolumns({n=2})
   end
 
-  local f = readdata(io.loaddata('export-20181012.list'))
+  local f = readdata(io.loaddata('export-20181018.list'))
   local prev = nil
   local cur = nil
   local names = {}
@@ -278,7 +278,7 @@ function gradetoword(grade)
 end
 
 function printstudents()
-  local f = readdata(io.loaddata('students-20181012.list'))
+  local f = readdata(io.loaddata('students-20181018.list'))
   local grade = nil
   local teacher = nil
   local inlines = false
