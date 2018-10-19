@@ -59,4 +59,4 @@ select * from export order by grade, teacher, last, first;
 .once students-20181012.list
 select distinct
   replace(grade, 'K', '0') as grade, TEACHER, first, last
-  from export order by 1,2,3,4;
+  from export order by 1,2,4,3;
