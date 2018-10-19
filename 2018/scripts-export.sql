@@ -42,7 +42,7 @@ create view export as
   "Parent/Guardian 3 Home Phone" AS "home3",
   "Parent/Guardian 3 Mobile Phone" AS "cell3",
   "Parent/Guardian 3 Email" AS "email3"
- from responses JOIN teachers USING ("teacher");
+ from responses LEFT OUTER JOIN teachers USING ("teacher");
 
 -- run export
 .header on
