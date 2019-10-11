@@ -100,17 +100,38 @@ function issamehomes(a, b)
   a = a or {}
   b = b or {}
 
-  return (a['cname1'] == b['cname1'] and
-          a['cname2'] == b['cname2'])
-         or
-         (a['cphone1'] == b['cphone1'] and
-          a['caddress1'] == b['caddress1'] and
-          a['cphone2'] == b['cphone2'] and
-          a['caddress2'] == b['caddress2'])
-         or
-         (a['cemail1'] == b['cemail1'] and
-          a['cemail2'] == b['cemail2'])
+  local an1 = a['cname1']
+  local bn1 = b['cname1']
+  local an2 = a['cname2']
+  local bn2 = b['cname2']
+  local ae1 = string.lower(a['cemail1'])
+  local be1 = string.lower(b['cemail1'])
+  local ae2 = string.lower(a['cemail2'])
+  local be2 = string.lower(b['cemail2'])
+  local ap1 = a['cphone1']
+  local bp1 = b['cphone1']
+  local ap2 = a['cphone2']
+  local bp2 = b['cphone2']
+  local aa1 = a['caddress1']
+  local ba1 = b['caddress1']
+  local aa2 = a['caddress2']
+  local ba2 = b['caddress2']
 
+  return
+    -- both names identical
+    (an1 == bn1 and an2 == bn2)
+    or
+    -- both emails present and identical
+    (ae1 ~= '' and ae1 == be1 and ae2 ~= '' and ae2 == be2)
+    or
+    -- second name missing and first email present and identical
+    (an2 == '' and bn2 == '' and ae1 ~= '' and ae1 == be1)
+    or
+    -- second name missing and first phone present and identical
+    (an2 == '' and bn2 == '' and ap1 ~= '' and ap1 == bp1)
+    or
+    -- phone1 and phone2 are present and different, and match
+    (ap1 ~= '' and ap2 ~= '' and ap1 ~= ap2 and ap1 == bp1 and ap2 == bp2)
 end
 
 function extractname(r)
@@ -228,6 +249,37 @@ function mergeentry(old, new)
   end
 end
 
+function maybeswapnextcontacts(e1, e2)
+  if e1 == nil or e2 == nil then return end
+  if e1['cname1'] == e2['cname2'] and
+     e1['cname2'] == e2['cname1'] and
+     e1['caddress1'] == e2['caddress2'] and
+     e1['caddress2'] == e2['caddress1'] and
+     e1['cemail1'] == e2['cemail2'] and
+     e1['cemail2'] == e2['cemail1'] and
+     e1['cphone1'] == e2['cphone2'] and
+     e1['cphone2'] == e2['cphone1']
+  then
+    -- swap e2
+    e2['cname1'],
+    e2['cname2'],
+    e2['caddress1'],
+    e2['caddress2'],
+    e2['cemail1'],
+    e2['cemail2'],
+    e2['cphone1'],
+    e2['cphone2'] =
+    e2['cname2'],
+    e2['cname1'],
+    e2['caddress2'],
+    e2['caddress1'],
+    e2['cemail2'],
+    e2['cemail1'],
+    e2['cphone2'],
+    e2['cphone1']
+  end
+end
+
 function printdirectory(proof)
   if tex.modes["tiny"] then
     context.startcolumns({n=9})
@@ -251,6 +303,7 @@ function printdirectory(proof)
       i, nextentry = next(f, i)
     end
 
+    maybeswapnextcontacts(entry, nextentry)
     if nextentry == nil or not issamehomes(entry, nextentry) then
       -- flush entry
       familycount = familycount + 1
