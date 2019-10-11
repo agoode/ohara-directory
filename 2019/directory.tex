@@ -100,14 +100,17 @@ function issamehomes(a, b)
   a = a or {}
   b = b or {}
 
-  return a['cname1'] == b['cname1'] and
-         --a['cphone1'] == b['cphone1'] and
-         --a['cemail1'] == b['cemail1'] and
-         --a['caddress1'] == b['caddress1'] and
-         --a['cphone2'] == b['cphone2'] and
-         --a['cemail2'] == b['cemail2'] and
-         --a['caddress2'] == b['caddress2'] and
-         a['cname2'] == b['cname2']
+  return (a['cname1'] == b['cname1'] and
+          a['cname2'] == b['cname2'])
+         or
+         (a['cphone1'] == b['cphone1'] and
+          a['caddress1'] == b['caddress1'] and
+          a['cphone2'] == b['cphone2'] and
+          a['caddress2'] == b['caddress2'])
+         or
+         (a['cemail1'] == b['cemail1'] and
+          a['cemail2'] == b['cemail2'])
+
 end
 
 function extractname(r)
@@ -213,6 +216,18 @@ function cleanentry(e)
   end
 end
 
+function mergeentry(old, new)
+  if old == nil or new == nil then return end
+  for i = 1, 2 do
+    a = 'caddress' .. i
+    e = 'cemail' .. i
+    p = 'cphone' .. i
+    if old[a] == "" then old[a] = new[a] end
+    if old[e] == "" then old[e] = new[e] end
+    if old[p] == "" then old[p] = new[p] end
+  end
+end
+
 function printdirectory(proof)
   if tex.modes["tiny"] then
     context.startcolumns({n=9})
@@ -243,6 +258,8 @@ function printdirectory(proof)
       printentry(names, entry, proof)
       names = {}
       entry = nextentry
+    else
+      mergeentry(entry, nextentry)
     end
 
     if entry == nil then break end
