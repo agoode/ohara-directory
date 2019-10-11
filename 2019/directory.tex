@@ -1,0 +1,378 @@
+\setuppapersize[letter][letter]
+
+\definefontfamily [office] [serif] [TeX Gyre Termes]
+\definefontfamily [office] [sans]  [TeX Gyre Heros]
+\definefontfamily [office] [mono]  [TeX Gyre Cursor] [features=none]
+\definefontfamily [office] [math]  [TeX Gyre Termes Math]
+\setupbodyfont[office, 10pt]
+
+\startmode[tiny]
+\setupbodyfont[office, 2pt]
+\stopmode
+
+\setupexternalfigures[directory={numbered-forms}]
+%\useMPlibrary[dum]
+
+\setuplayout[backspace=0.75in,
+             width=7in,
+             topspace=0.35in,
+             height=10.15in,
+             header=0.25in,
+             footer=0.25in]
+
+\startmode[tiny]
+\setuplayout[backspace=0.25in,
+             width=8in,
+             topspace=0.25in,
+             height=10.50in,
+             header=0in,
+             footer=0in]
+\stopmode
+
+\setuphead[section][indentnext=yes]
+
+\setuppagenumbering[location=]
+
+\startmode[proof]
+\setupheadertexts[{\color[red]{DO NOT DISTRIBUTE}}][{\color[red]{PROOFREADER USE ONLY}}][{\color[red]{DO NOT DISTRIBUTE}}][{\color[red]{PROOFREADER USE ONLY}}]
+\setupfootertexts[{\color[red]{PROOFREADER USE ONLY}}][{\color[red]{DO NOT DISTRIBUTE}}][{\color[red]{PROOFREADER USE ONLY}}][{\color[red]{DO NOT DISTRIBUTE}}]
+
+\setuppagenumbering[location=bottom]
+\definelist[debugno]
+\stopmode
+
+\definelist[students]
+
+\setupinteraction[state=start, title={2019 O'Hara Elementary Student Directory}]
+
+\startmode[proof]
+\placebookmarks[students]
+\placebookmarks[debugno]
+\setupinteractionscreen[option=bookmark]
+\stopmode
+
+%\setupwhitespace[medium]
+\setupinterlinespace[line=2.4ex]
+
+\ss
+
+\startmode[proof]
+\title{O'Hara Elementary Directory \color[red]{PROOF DOCUMENT} 2019-10-10}
+\stopmode
+
+
+\starttext
+
+\startmode[proof]
+\completecontent
+\pagebreak
+\stopmode
+
+\startluacode
+function splitline(line)
+  return string.split(line, '')
+end
+
+function readdata(f)
+  -- read sqlite 0x1F/0x1E style data (with header)
+  local s = string.split(f, '')
+  local data = {}
+  local header = splitline(s[1])
+  table.remove(s, 1)
+
+  -- read lines
+  for _,v in ipairs(s) do
+    local row = {}
+    local l = splitline(v)
+    for i,val in ipairs(l) do
+      row[header[i]] = string.strip(val)
+    end
+    -- don't insert empty last row
+    if row[header[1]] ~= "" then
+      table.insert(data, row)
+    end
+  end
+
+  return data
+end
+
+function issamehomes(a, b)
+  a = a or {}
+  b = b or {}
+
+  return a['cname1'] == b['cname1'] and
+         --a['cphone1'] == b['cphone1'] and
+         --a['cemail1'] == b['cemail1'] and
+         --a['caddress1'] == b['caddress1'] and
+         --a['cphone2'] == b['cphone2'] and
+         --a['cemail2'] == b['cemail2'] and
+         --a['caddress2'] == b['caddress2'] and
+         a['cname2'] == b['cname2']
+end
+
+function extractname(r)
+  local l = {}
+  l['first'] = r['first']
+  l['last'] = r['last']
+  l['teacher'] = r['teacher']
+  l['grade'] = r['grade']
+  return l
+end
+
+function printnames(names, proof)
+  for i,n in ipairs(names) do
+    s = string.formatter('%!tex!, %!tex!', n['last'], n['first'])
+    context.bookmark({'students'}, s)
+    context.bold(
+      function() s = string.formatter('%!tex!,~%!tex!', n['last'], n['first'])
+                 tex.sprint(s)
+                 context.hfill()
+                 local grade = n['grade']
+                 if grade == '0' then grade = 'K' end
+                 context.unhyphenated(function() context('(%!tex!,~%!tex!)', grade, n['teacher']) end)
+      end
+    )
+    context(true)
+  end
+end
+
+function printaddr(r, num)
+  local a = r['caddress' .. num]
+  if a == "" then return end
+  context.indenting()
+  context.par()
+  context('%!tex!', a)
+  context(true)
+end
+
+function printemail(r, num)
+  local e = r['cemail' .. num]
+  if e == "" then return end
+  local emails = string.split(e, ';')
+  for k,v in ipairs(emails) do
+    context.unhyphenated(function() context('%!tex!', string.strip(v)) end)
+    context(true)
+  end
+end
+
+function printphone(r, num)
+  local p = r['cphone' .. num]
+  if p == "" then return end
+  context('%!tex!', p)
+  context(true)
+end
+
+function printparent(r, num)
+  local p = r['cname' .. num]
+  if p ~= "" then
+    context.setupindenting({'yes', 'small'})
+    context.start()
+    if tex.modes["tiny"] then
+      context.definedfont({'SansBold at 2pt'})
+    else
+      context.definedfont({'SansBold at 9pt'})
+    end
+    context.setupinterlinespace()
+    context('%!tex!', p)
+    context.stop()
+    context(true)
+  end
+  context.setupindenting({'yes', 'medium'})
+  printaddr(r, num)
+  printphone(r, num)
+  printemail(r, num)
+end
+
+function printrecord(r)
+  context.setupindenting({'yes', 'small'})
+  printparent(r, '1')
+  printparent(r, '2')
+end
+
+function printentry(names, entry, proof)
+  context.startframedtext({width='broad', frame='none'})
+  context.startlines()
+  printnames(names, proof)
+  if tex.modes["tiny"] then
+    context.definedfont({'Sans at 2pt'})
+  else
+    context.definedfont({'Sans at 9pt'})
+  end
+  context.setupinterlinespace()
+  printrecord(entry)
+  context.stoplines()
+  context.stopframedtext()
+end
+
+function cleanentry(e)
+  if e == nil then return end
+  for i = 1, 2 do
+    if not string.find(e['caddress' .. i], '%d') then e['caddress' .. i] = '' end
+    if not string.find(e['cemail' .. i], '@') then e['cemail' .. i] = '' end
+    if not string.find(e['cphone' .. i], '%d') then e['cphone' .. i] = '' end
+  end
+end
+
+function printdirectory(proof)
+  if tex.modes["tiny"] then
+    context.startcolumns({n=9})
+  else
+    context.startcolumns({n=2})
+  end
+
+  local f = readdata(io.loaddata('export-20191010.list'))
+  local entry = nil
+  local nextentry = nil
+  local names = {}
+  local i = nil
+  local familycount = 0
+  while true do
+    i, nextentry = next(f, i)
+    cleanentry(nextentry)
+    if entry == nil then
+      -- first record
+      entry = nextentry
+      table.insert(names, extractname(entry))
+      i, nextentry = next(f, i)
+    end
+
+    if nextentry == nil or not issamehomes(entry, nextentry) then
+      -- flush entry
+      familycount = familycount + 1
+      commands.writestatus('family', string.formatter('%d', familycount))
+      printentry(names, entry, proof)
+      names = {}
+      entry = nextentry
+    end
+
+    if entry == nil then break end
+    table.insert(names, extractname(nextentry))
+  end
+  context.stopcolumns()
+end
+
+function gradetoword(grade)
+  if     grade == '0' then return 'KINDERGARTEN'
+  elseif grade == '1' then return 'FIRST GRADE'
+  elseif grade == '2' then return 'SECOND GRADE'
+  elseif grade == '3' then return 'THIRD GRADE'
+  elseif grade == '4' then return 'FOURTH GRADE'
+  elseif grade == '5' then return 'FIFTH GRADE'
+  end
+end
+
+function printstudents()
+  local f = readdata(io.loaddata('students-20191010.list'))
+  local grade = nil
+  local teacher = nil
+  local inlines = false
+  for i, row in ipairs(f) do
+    local g = gradetoword(row['grade'])
+    local t = row['teacher']
+    local name = row['first'] .. ' ' .. row['last']
+    commands.writestatus('student', string.formatter('%d %s %s %s', i, g, t, name))
+    if g ~= grade then
+      grade = g
+      if inlines then
+        context.stoplines()
+        context.stopcolumns()
+        context.vfill()
+        inlines = false
+      end
+      context.pagebreak()
+      context.startframedtext({frame='off', width='broad', align='middle', bodyfont='18pt', style='bold'})
+      context(g)
+      context.stopframedtext()
+    end
+    if t ~= teacher then
+      teacher = t
+      if inlines then
+        context.stoplines()
+        context.stopcolumns()
+        context.vfill()
+        inlines = false
+      end
+      context.start()
+      context.hfill()
+      context.bold()
+      context(t)
+      context.hfill()
+      context.stop()
+      context(true)
+      context.medskip()
+      context.startcolumns({n=4, balance='yes'})
+      context.startlines()
+      inlines = true
+    end
+    context.unhyphenated(name)
+    context(true)
+  end
+  if inlines then
+    context.stoplines()
+    context.stopcolumns()
+    context.vfill()
+    inlines = false
+  end
+end
+
+function emptyentry()
+  local entry = {cname1 = '',
+                 cphone1 = '',
+                 cemail1 = '',
+                 caddress1 = '',
+                 cname2 = '',
+                 cphone2 = '',
+                 cemail2 = '',
+                 caddress2 = ''}
+  return entry
+end
+
+local samplenames = {{first='First', last='Last', teacher='TEACHER', grade='1'},
+                     {first='Second', last='Last', teacher='PROFESSOR', grade='5'}}
+local sampleentry = {cname1 = 'cname1',
+                     cphone1 = '021-212-1212',
+                     cemail1 = 'first@example.com; first+alt@example.com',
+                     caddress1 = '123 First St. City ZZ 33333',
+                     cname2 = 'cname2',
+                     cphone2 = '121-212-1212',
+                     cemail2 = 'second@example.com',
+                     caddress2 = '456 Second St. City ZZ 44444'}
+
+if tex.modes["proof"] then
+  context.section('Sample format')
+  context.startcolumns({n=2})
+
+  printentry(samplenames, sampleentry)
+
+  local justemailentry = emptyentry()
+  justemailentry['cemail1'] = 'just@example.com'
+  printentry({{first='Just', last='Email', teacher='TEACHER', grade='0'}},
+             justemailentry)
+
+  local justemailentry2 = emptyentry()
+  justemailentry2['cemail2'] = 'just2@example.com'
+  printentry({{first='Another', last='Email', teacher='TEACHER', grade='0'}},
+             justemailentry2)
+
+  context.stopcolumns()
+  context.pagebreak()
+
+  context.section('Layout draft')
+  context('Starts on next page.')
+  context.pagebreak()
+  printdirectory(true)
+  context.pagebreak()
+
+  context.section('Student list by teacher')
+  context('Starts on next page.')
+  context.pagebreak()
+  printstudents()
+else
+  printdirectory(false)
+  if not tex.modes["tiny"] then
+    printstudents()
+  end
+end
+
+\stopluacode
+\stoptext
